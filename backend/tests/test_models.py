@@ -79,7 +79,7 @@ def test_note_create(category):
     )
     assert n.title == 'テスト'
     assert n.category == category
-    assert n.note_tags == ['Python']
+    assert [t.name for t in n.tags.all()] == ['Python']
     assert n.status == Note.Status.PUBLISHED
 
 
@@ -123,7 +123,7 @@ def test_note_multiple_tags_from_frontmatter(category):
         content='---\ntags:\n  - Python\n  - 入門\n---\n本文',
         category=category,
     )
-    assert n.note_tags == ['Python', '入門']
+    assert [t.name for t in n.tags.all()] == ['Python', '入門']
 
 
 @pytest.mark.django_db
@@ -133,7 +133,7 @@ def test_note_hackmd_tags(category):
         content='###### tags: `auth` `saml`\n\n本文',
         category=category,
     )
-    assert n.note_tags == ['auth', 'saml']
+    assert [t.name for t in n.tags.all()] == ['auth', 'saml']
 
 
 @pytest.mark.django_db

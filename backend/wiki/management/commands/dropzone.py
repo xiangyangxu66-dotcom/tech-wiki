@@ -1,8 +1,7 @@
-"""
-dropzone: MD ファイル監視 & 自動登録 Django management command.
+"""dropzone: MD ファイル監視 & 自動登録 Django management command.
 
 使い方:
-    python manage.py dropzone [--dir <監視ディレクトリ>]
+    python manage.py dropzone [--dir <監視ディレクトリ>] [--once]
 
     起動後、監視ディレクトリに .md ファイルを放り込むと:
     1. ファイル読み取り → フロントマター解析（title, tags, category）
@@ -11,6 +10,8 @@ dropzone: MD ファイル監視 & 自動登録 Django management command.
     4. slug 重複時は自動サフィックス付与
     5. 登録成功 → processed/ に移動
     6. エラー時 → errors/ に移動（ログ出力）
+
+    --once: 起動時スキャンのみ実行し、監視せずに終了
 
 重複判定ルール:
     - content_hash 一致 → SKIP（完全重複）
@@ -50,6 +51,7 @@ H1_RE = re.compile(r'^#\s+(.+)$', re.MULTILINE)
 HACKMD_TAGS_RE = re.compile(
     r'^\s*(?:\d+\|\s*)*#{1,6}\s*tags:\s*(`.+?`[\s,]*)+$', re.MULTILINE | re.IGNORECASE
 )
+
 
 # ---------------------------------------------------------------------------
 # ヘルパー
@@ -101,7 +103,6 @@ def resolve_category(fm: dict):
     """カテゴリ解決: frontmatter.category (slug or name) → Category or None"""
     raw = fm.get('category', '')
     if not raw:
-        # tags[0] をカテゴリ候補にしない（安易な推測は誤登録の元）
         return None
     raw = str(raw).strip()
     for lookup in ['slug', 'name']:
@@ -163,13 +164,12 @@ def process_md_file(filepath: str) -> dict:
     # slug 生成
     slug = unique_slug(title)
 
-    # Note 作成
+    # Note 作成（tags, content_hash, has_mermaid は save() が自動設定）
     try:
         note = Note.objects.create(
             title=title,
             slug=slug,
             content=content,
-            note_tags=tags,
             category=category,
             status=Note.Status.PUBLISHED,
         )
@@ -217,7 +217,6 @@ class DropzoneHandler(FileSystemEventHandler):
         if key in self._recent:
             return
         self._recent.add(key)
-        # 1秒後にクリア（別ファイルなら問題なし）
         time.sleep(0.5)
         if not src.exists():
             self._recent.discard(key)
@@ -254,7 +253,6 @@ class DropzoneHandler(FileSystemEventHandler):
     def _move(self, src, dest_dir):
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest = dest_dir / src.name
-        # 同名ファイル衝突時はタイムスタンプ付与
         if dest.exists():
             dest = dest_dir / f'{src.stem}_{int(time.time())}{src.suffix}'
         shutil.move(str(src), str(dest))
@@ -270,6 +268,10 @@ class Command(BaseCommand):
         parser.add_argument(
             '--dir', default=None,
             help='監視ディレクトリ（デフォルト: <project_root>/dropzone/）'
+        )
+        parser.add_argument(
+            '--once', action='store_true',
+            help='起動時スキャンのみ実行し、監視を開始せずに終了する'
         )
 
     def handle(self, *args, **options):
@@ -290,15 +292,13 @@ class Command(BaseCommand):
         self.stdout.write('  .md ファイルをドロップすると自動登録されます')
         self.stdout.write('  Ctrl+C で停止\n')
 
-        # ★ 起動時に既存の .md ファイルを一括処理
+        # 起動時スキャン
         existing = sorted(watch_dir.glob('*.md'))
         if existing:
             self.stdout.write(f'\n  起動時スキャン: {len(existing)} 件の未処理ファイル')
-            self.stdout.flush()
             for f in existing:
                 result = process_md_file(str(f))
                 self.stdout.write(f'  📥 {f.name} → {result["status"]}: {result.get("title", "?")}')
-                self.stdout.flush()
                 if result['status'] == 'SKIP_DUPLICATE':
                     shutil.move(str(f), str(duplicates_dir / f.name))
                 elif result['status'].startswith('ERROR'):
@@ -306,7 +306,12 @@ class Command(BaseCommand):
                 else:
                     shutil.move(str(f), str(processed_dir / f.name))
             self.stdout.write('  起動時スキャン完了\n')
-            self.stdout.flush()
+        else:
+            self.stdout.write('  (未処理ファイルなし)\n')
+
+        if options.get('once'):
+            self.stdout.write(self.style.SUCCESS('  --once 指定のため監視を開始せずに終了します'))
+            return
 
         event_handler = DropzoneHandler(
             stdout=self.stdout,

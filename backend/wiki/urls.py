@@ -4,7 +4,7 @@ from .views import (
     CategoryViewSet, NoteViewSet,
     AuditLogViewSet, SystemConfigViewSet,
     health_check, health_detailed,
-    tag_aggregation,
+    tag_aggregation, tag_list,
 )
 
 router = DefaultRouter()
@@ -17,5 +17,6 @@ urlpatterns = [
     path('health/',          health_check,     name='health-check'),
     path('health/detailed/', health_detailed,  name='health-detailed'),
     path('tags/',            tag_aggregation,  name='tag-aggregation'),
+    path('tags/list/',       tag_list,         name='tag-list'),
     path('', include(router.urls)),
 ]

@@ -4,9 +4,9 @@ from rest_framework import viewsets, filters, mixins
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from django.db import connections
-from django.db.models import Q
+from django.db.models import Q, Count
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Category, Note, AuditLog, SystemConfig
+from .models import Tag, Category, Note, AuditLog, SystemConfig
 from .fts_search import FTS5SearchFilter
 import time
 
@@ -52,31 +52,40 @@ def health_detailed(request):
 
 
 # ---------------------------------------------------------------------------
-# タグ集計（動的グループ用）
+# タグ集計（SQL GROUP BY）
 # ---------------------------------------------------------------------------
 @api_view(['GET'])
 def tag_aggregation(request):
-    """全ノートの note_tags を集計。
-    通常タグ + 無所属カウント を返す。
+    """Tag テーブルから COUNT 集計。無所属カウントも返す。
+
     クエリパラメータ ?min_count=N で最小カウントフィルタ（デフォルト1）。
     """
     min_count = int(request.query_params.get('min_count', 1))
-    counts = {}
-    untagged = 0
-    for note in Note.objects.values_list('note_tags', flat=True):
-        if note:
-            for t in note:
-                counts[t] = counts.get(t, 0) + 1
-        else:
-            untagged += 1
-    result = sorted(
-        [{'name': k, 'count': v} for k, v in counts.items() if v >= min_count],
-        key=lambda x: (-x['count'], x['name'])
+    result = list(
+        Tag.objects
+        .annotate(note_count=Count('notes'))
+        .filter(note_count__gte=min_count)
+        .values('name', 'slug', 'note_count')
+        .order_by('-note_count', 'name')
     )
-    # 無所属は末尾に追加
+    # rename note_count → count for frontend compatibility
+    result = [{'name': r['name'], 'slug': r['slug'], 'count': r['note_count']} for r in result]
+
+    # 無所属
+    untagged = Note.objects.filter(tags__isnull=True).count()
     if untagged > 0:
         result.append({'name': '無所属', 'count': untagged})
     return Response(result)
+
+
+# ---------------------------------------------------------------------------
+# タグ一覧（エディタ補完用）
+# ---------------------------------------------------------------------------
+@api_view(['GET'])
+def tag_list(request):
+    """全タグの name + slug 一覧。エディタのタグ補完・選択用。"""
+    data = list(Tag.objects.values('name', 'slug').order_by('name'))
+    return Response(data)
 
 
 # ---------------------------------------------------------------------------
@@ -107,7 +116,7 @@ class NoteViewSet(viewsets.ModelViewSet):
     Note CRUD。
 
     クエリパラメータ:
-      ?tag=タグ名              → note_tags を絞り込み
+      ?tag=タグslug           → tags M2M を絞り込み
       ?category__slug=xxx     → カテゴリ絞り込み
       ?status=published       → 公開済のみ
       ?bookmark=1             → ブックマークのみ
@@ -115,7 +124,7 @@ class NoteViewSet(viewsets.ModelViewSet):
       ?search_content=正規表現  → 本文 REGEXP 検索（空白区切り=AND）
       ?search=キーワード       → タイトル+本文 統合 FTS5（後方互換）
     """
-    queryset = Note.objects.select_related('category').order_by('-bookmark', '-updated_at')
+    queryset = Note.objects.select_related('category').prefetch_related('tags').order_by('-bookmark', '-updated_at')
     filter_backends = [DjangoFilterBackend, FTS5SearchFilter, filters.OrderingFilter]
     filterset_fields = ['category__slug', 'status', 'bookmark']
     ordering_fields = ['title', 'created_at', 'updated_at']
@@ -132,15 +141,11 @@ class NoteViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        tag_name = self.request.query_params.get('tag')
-        if tag_name == '無所属':
-            qs = qs.filter(Q(note_tags=[]) | Q(note_tags__isnull=True))
-        elif tag_name:
-            matching_ids = [
-                n[0] for n in qs.values_list('id', 'note_tags')
-                if n[1] and tag_name in n[1]
-            ]
-            qs = qs.filter(id__in=matching_ids)
+        tag_slug = self.request.query_params.get('tag')
+        if tag_slug == '無所属':
+            qs = qs.filter(tags__isnull=True)
+        elif tag_slug:
+            qs = qs.filter(tags__slug=tag_slug)
         return qs
 
     def list(self, request, *args, **kwargs):
@@ -234,7 +239,6 @@ class NoteViewSet(viewsets.ModelViewSet):
         import re as _re
 
         # Search each OR group: find the earliest group where ALL terms match.
-        # Take the match span of that group as the window anchor.
         min_start = len(text)
         max_end = 0
         matched_terms: set[str] = set()

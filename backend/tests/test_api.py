@@ -61,7 +61,7 @@ def test_note_list(note, api_client):
     n = resp.data['results'][0]
     assert n['title'] == 'Python入門'
     assert n['category_name'] == 'プログラミング'
-    assert n['note_tags'] == ['Python']
+    assert [t['name'] for t in n['tags']] == ['Python']
 
 
 @pytest.mark.django_db
@@ -79,7 +79,7 @@ def test_note_detail(note, api_client):
     assert resp.status_code == 200
     assert resp.data['title'] == 'Python入門'
     assert resp.data['content'].endswith('これはテストノートです。')
-    assert resp.data['note_tags'] == ['Python']
+    assert [t['name'] for t in resp.data['tags']] == ['Python']
     assert resp.data['category_name'] == 'プログラミング'
     assert resp.data['category_slug'] == 'programming'
 
@@ -105,7 +105,7 @@ def test_note_create(api_client, category):
     assert resp.data['title'] == '新規ノート'
     assert resp.data['content'].endswith('テスト')
     assert resp.data['status'] == 'published'
-    assert resp.data['note_tags'] == ['NewTag']
+    assert [t['name'] for t in resp.data['tags']] == ['NewTag']
 
 
 @pytest.mark.django_db
@@ -216,11 +216,11 @@ def test_note_filter_by_bookmark(notes, api_client):
 
 @pytest.mark.django_db
 def test_note_filter_by_tag(notes, api_client):
-    url = reverse('note-list') + '?tag=入門'
+    url = reverse('note-list') + '?tag=python'
     resp = api_client.get(url)
-    assert resp.data['count'] == 2  # Python入門, JavaScript入門
+    assert resp.data['count'] == 2  # Python入門, Pythonチートシート
     for n in resp.data['results']:
-        assert '入門' in n['title']
+        assert 'Python' in n['title']
 
 
 @pytest.mark.django_db

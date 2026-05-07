@@ -1,59 +1,102 @@
+"""
+Django Admin 設定。
+
+- admin.site.disable_action('delete_selected') で誤操作防止（ソフトデリートなしのため）
+- Mermaid 検出、タグ数、ブックマーク状態を list_display で確認可能
+"""
 from django.contrib import admin
-from django.utils.html import format_html
-from mptt.admin import MPTTModelAdmin
-from .models import Category, Note
+from .models import Tag, Category, Note, AuditLog, SystemConfig
+
+admin.site.disable_action('delete_selected')
 
 
-@admin.register(Category)
-class CategoryAdmin(MPTTModelAdmin):
-    list_display = ['id', 'name', 'slug', 'parent', 'note_count']
-    search_fields = ['name', 'slug']
-    readonly_fields = ['slug']
-    list_select_related = ['parent']
+# ============================================================
+# Tag
+# ============================================================
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ['name', 'slug', 'note_count', 'created_at']
+    search_fields = ['name']
+    readonly_fields = ['slug', 'created_at']
 
-    @admin.display(description='ノート数')
+    def get_queryset(self, request):
+        from django.db.models import Count
+        return super().get_queryset(request).annotate(_note_count=Count('notes'))
+
+    @admin.display(description='ノート数', ordering='_note_count')
     def note_count(self, obj):
-        return obj.notes.count()
+        return getattr(obj, '_note_count', 0)
 
 
+# ============================================================
+# Category
+# ============================================================
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ['name', 'slug', 'parent', 'created_at']
+    search_fields = ['name']
+    readonly_fields = ['slug']
+
+
+# ============================================================
+# Note
+# ============================================================
 @admin.register(Note)
 class NoteAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title', 'slug', 'bookmark_icon', 'status',
-                    'category_link', 'tag_display', 'updated_at']
-    list_filter = ['category', 'status', 'bookmark', 'created_at']
-    search_fields = ['title', 'slug', 'content']
-    readonly_fields = ['slug', 'note_tags', 'created_at', 'updated_at']
+    list_display = ['title', 'slug', 'category', 'tag_display', 'bookmark', 'status', 'has_mermaid', 'updated_at']
+    list_filter = ['status', 'bookmark', 'has_mermaid', 'category']
+    search_fields = ['title', 'content']
+    readonly_fields = ['slug', 'created_at', 'updated_at']
     date_hierarchy = 'updated_at'
-    ordering = ['-bookmark', '-updated_at']
-    list_select_related = ['category']
-    prepopulated_fields = {'slug': ('title',)}
+
     fieldsets = (
-        (None, {
+        ('基本情報', {
             'fields': ('title', 'slug', 'content')
         }),
-        ('ステータス', {
-            'fields': ('status', 'bookmark'),
+        ('分類', {
+            'fields': ('category', 'tags'),
         }),
-        ('カテゴリとタグ', {
-            'fields': ('category', 'note_tags'),
+        ('状態', {
+            'fields': ('bookmark', 'status'),
         }),
         ('日時', {
             'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',),
         }),
     )
 
-    @admin.display(description='★', boolean=True)
-    def bookmark_icon(self, obj):
-        return obj.bookmark
-
-    @admin.display(description='カテゴリ')
-    def category_link(self, obj):
-        if obj.category:
-            url = f'/admin/wiki/category/{obj.category.id}/change/'
-            return format_html('<a href="{}">{}</a>', url, obj.category.name)
-        return '-'
-
     @admin.display(description='タグ')
     def tag_display(self, obj):
-        return ', '.join(obj.note_tags or [])
+        return ', '.join(t.name for t in obj.tags.all()) or '—'
+
+
+# ============================================================
+# AuditLog (ReadOnly)
+# ============================================================
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
+    list_display = ['action', 'model_name', 'object_id', 'username', 'created_at']
+    list_filter = ['action', 'model_name']
+    search_fields = ['username', 'summary']
+    date_hierarchy = 'created_at'
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+# ============================================================
+# SystemConfig
+# ============================================================
+@admin.register(SystemConfig)
+class SystemConfigAdmin(admin.ModelAdmin):
+    list_display = ['key', 'value_short', 'updated_at']
+    search_fields = ['key', 'description']
+
+    @admin.display(description='値')
+    def value_short(self, obj):
+        return obj.value[:80]

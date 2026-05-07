@@ -2,6 +2,7 @@ import hashlib
 import re
 import yaml
 from django.db import models
+from django.db.models import Count
 from django.utils.text import slugify
 from mptt.models import MPTTModel, TreeForeignKey
 
@@ -43,8 +44,9 @@ def contains_mermaid(content: str) -> bool:
     """Markdown 内に Mermaid fenced code block があるかを判定。"""
     return '```mermaid' in content.lower()
 
-def extract_tags_from_content(content: str):
-    """content からタグを抽出。優先順:
+
+def extract_tags_from_content(content: str) -> list[str]:
+    """content からタグ文字列リストを抽出。優先順:
     1. YAML frontmatter tags
     2. HackMD 形式 `###### tags: `tag1` `tag2``
     """
@@ -68,6 +70,26 @@ def extract_tags_from_content(content: str):
         return [t.strip() for t in tags if t.strip()]
 
     return []
+
+
+# ============================================================================
+# Tag — 独立テーブル。名前の正規化と参照カウントによる自動クリーンアップ
+# ============================================================================
+class Tag(models.Model):
+    name       = models.CharField(max_length=100, unique=True)
+    slug       = models.SlugField(max_length=100, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = _slugify_with_fallback(self.name, 'tag-')
+        super().save(*args, **kwargs)
 
 
 # ============================================================================
@@ -99,7 +121,7 @@ class Category(MPTTModel):
 
 
 # ============================================================================
-# Note（技術ノート）— タグは content のフロントマターから抽出
+# Note（技術ノート）— タグは Tag テーブルへの M2M
 # ============================================================================
 class Note(models.Model):
     class Status(models.TextChoices):
@@ -109,7 +131,7 @@ class Note(models.Model):
     title      = models.CharField(max_length=500)
     slug       = models.SlugField(max_length=255, unique=True)
     content    = models.TextField()                           # Markdown 本文（DB格納）
-    note_tags  = models.JSONField(default=list, blank=True)    # タグ文字列配列（フロントマター由来）
+    tags       = models.ManyToManyField(Tag, related_name='notes', blank=True)
     category   = models.ForeignKey(
         Category, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='notes'
@@ -136,16 +158,69 @@ class Note(models.Model):
     def __str__(self):
         return self.title
 
+    # ------------------------------------------------------------------
+    # Frontmatter tag sync helpers
+    # ------------------------------------------------------------------
+    def _sync_frontmatter_tags(self, tag_names: list[str]) -> None:
+        """content の frontmatter tags: 行を tag_names で置換/追加する。
+
+        tag_names が空の場合は tags: 行を削除。frontmatter 自体がなければ新規作成。
+        """
+        import yaml
+        fm, body = parse_frontmatter(self.content)
+        fm = fm or {}
+
+        if tag_names:
+            fm['tags'] = tag_names
+        else:
+            fm.pop('tags', None)
+            fm.pop('tag', None)
+
+        # Rebuild content
+        if fm:
+            yaml_str = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False).strip()
+            self.content = f'---\n{yaml_str}\n---\n{body}'
+        else:
+            self.content = body
+
+    def _set_tags_from_slugs(self, tag_slugs: list[str]) -> None:
+        """tag slug のリストを受け取り、frontmatter 同期 + save() で M2M 反映する。
+
+        content を直接編集せず、frontmatter tags: 行を更新してから save()。
+        """
+        if not tag_slugs:
+            self._sync_frontmatter_tags([])
+            self.save()
+            return
+        tag_names = list(Tag.objects.filter(slug__in=tag_slugs).values_list('name', flat=True))
+        self._sync_frontmatter_tags(tag_names)
+        self.save()
+
+    # ------------------------------------------------------------------
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = _slugify_with_fallback(self.title, 'note-')
-        # ★ content のフロントマターからタグを自動抽出
-        self.note_tags = extract_tags_from_content(self.content)
-        # ★ content の MD5 hash を先頭16桁で保持（重複検知）
+        # content から派生データを計算（常に最新に保つ）
         self.content_hash = hashlib.md5(self.content.encode()).hexdigest()[:HASH_LEN]
-        # ★ Mermaid fenced code block の有無を保持（描画最適化用）
         self.has_mermaid = contains_mermaid(self.content)
+
+        update_fields = kwargs.get('update_fields')
         super().save(*args, **kwargs)
+
+        # ★ partial save (e.g. toggle_bookmark) の場合は M2M 同期をスキップ
+        if update_fields is not None:
+            return
+
+        # ★ content → M2M 同期
+        tag_names = extract_tags_from_content(self.content)
+        tag_objs = []
+        for name in tag_names:
+            tag, _created = Tag.objects.get_or_create(name=name)
+            tag_objs.append(tag)
+        self.tags.set(tag_objs)
+
+        # ★ 0参照タグの自動クリーンアップ
+        Tag.objects.annotate(note_count=Count('notes')).filter(note_count=0).delete()
 
 
 # ============================================================================
