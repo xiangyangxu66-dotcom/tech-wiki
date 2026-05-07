@@ -42,9 +42,15 @@ def _escape_fts5(term: str) -> str:
 
 
 def _build_column_query(term: str, column: str) -> str:
-    """Build FTS5 column-prefixed query: title:\"terraform\""""
+    """Build FTS5 column-prefixed prefix query: title:Docker*
+
+    Uses prefix matching (bare term + *) instead of phrase matching ("term")
+    because FTS5 with unicode61 tokenizer treats ASCII+CJK mixed strings
+    (e.g. 'Docker入門') as a single token. Column-prefixed phrase queries
+    (title:"Docker") don't match single-token 'docker入門'.
+    """
     escaped = _escape_fts5(term)
-    return f'{column}:"{escaped}"'
+    return f'{column}:{escaped}*'
 
 
 def _run_fts5_search(table: str, match_expr: str) -> list[int]:
@@ -86,7 +92,7 @@ def _run_regexp_search(table: str, or_groups: list[list[str]]) -> list[int]:
         for group in or_groups:
             if not group:
                 continue
-            conditions = " AND ".join([f"{table}.content REGEXP %s" for _ in group])
+            conditions = " AND ".join([f"{table}.content REGEXP '(?i)' || %s" for _ in group])
             try:
                 cursor.execute(
                     f"""

@@ -192,7 +192,7 @@ class NoteViewSet(viewsets.ModelViewSet):
             with connection.cursor() as cursor:
                 for note in page:
                     cursor.execute(
-                        """SELECT snippet(wiki_note_fts, 1, '<mark>', '</mark>', '…', 48)
+                        """SELECT snippet(wiki_note_fts, -1, '<mark>', '</mark>', '…', 48)
                            FROM wiki_note_fts
                            WHERE wiki_note_fts MATCH %s AND rowid = %s""",
                         [fts5_expr, note.id],
