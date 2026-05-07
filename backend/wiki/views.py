@@ -162,7 +162,7 @@ class NoteViewSet(viewsets.ModelViewSet):
         Two paths:
           1. Title search (FTS5) → SQLite snippet() with <mark> wrappers.
           2. Content only (REGEXP) → Python snippet with regex match window.
-          3. Both → FTS5 snippet takes priority.
+          3. Both → REGEXP (content) snippet takes priority.
         """
         params = self.request.query_params
         title = (params.get('search_title') or '').strip()
@@ -181,7 +181,7 @@ class NoteViewSet(viewsets.ModelViewSet):
         elif legacy:
             fts5_expr = f'("{_escape_fts5(legacy)}")'
 
-        if fts5_expr:
+        if fts5_expr and not content:
             from django.db import connection
             snippets = {}
             with connection.cursor() as cursor:
