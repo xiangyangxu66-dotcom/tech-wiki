@@ -1,0 +1,204 @@
+/* ==========================================================================
+   HealthIndicator — Footer status dot + modal
+   Mac-inspired frosted glass design, matching existing design system
+   ========================================================================== */
+
+/* ── Footer dot button ── */
+.health-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 0.5px solid var(--border-medium);
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: box-shadow 0.2s, background 0.2s;
+}
+.health-indicator:hover {
+  background: var(--bg-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.health-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.health-label {
+  white-space: nowrap;
+}
+
+/* ── Dot colors ── */
+.dot-loading .health-dot {
+  background: var(--text-tertiary);
+  animation: health-pulse 1.2s ease-in-out infinite;
+}
+.dot-ok .health-dot      { background: var(--accent-green); }
+.dot-error .health-dot    { background: var(--accent-red); }
+
+@keyframes health-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1.0; }
+}
+
+/* ── Modal overlay ── */
+.health-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: health-fade-in 0.15s ease-out;
+}
+
+@keyframes health-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Modal card ── */
+.health-modal {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  overflow: hidden;
+  animation: health-slide-up 0.18s ease-out;
+}
+
+@keyframes health-slide-up {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.health-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg) var(--space-xl);
+  border-bottom: 1px solid var(--border-light);
+}
+.health-modal-header h2 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.health-modal-close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.health-modal-close:hover {
+  background: rgba(0, 0, 0, 0.10);
+  color: var(--text-primary);
+}
+
+/* ── Modal body ── */
+.health-modal-body {
+  padding: var(--space-xl);
+  min-height: 80px;
+}
+
+.health-modal-loading,
+.health-modal-error,
+.health-modal-empty {
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  padding: var(--space-lg) 0;
+}
+
+.health-modal-error {
+  color: var(--accent-red);
+}
+
+/* Detail list — definition list style */
+.health-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+}
+
+.health-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+.health-detail-row + .health-detail-row {
+  border-top: 1px solid var(--border-light);
+}
+
+.health-detail-row dt {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+.health-detail-row dd {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+  text-align: right;
+}
+
+/* ── Modal footer ── */
+.health-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-xl);
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-toolbar);
+}
+
+.health-modal-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.health-modal-status .health-dot {
+  width: 7px;
+  height: 7px;
+}
+
+.health-modal-close-btn {
+  padding: 4px 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent-blue);
+  color: #fff;
+  font-size: 12px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.health-modal-close-btn:hover {
+  opacity: 0.85;
+}

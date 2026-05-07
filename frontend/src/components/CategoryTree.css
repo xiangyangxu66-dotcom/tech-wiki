@@ -1,0 +1,110 @@
+/* ==========================================================================
+   CategoryTree — Finder-style sidebar navigation
+   ========================================================================== */
+
+.category-tree {
+  padding: var(--space-xs) 0;
+  user-select: none;
+}
+
+.tree-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: var(--space-sm) var(--space-lg) var(--space-xs);
+}
+
+.tree-root,
+.tree-children {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tree-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  margin: 0 6px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.12s ease;
+  min-height: 28px;
+}
+
+.tree-item:hover {
+  background: var(--bg-hover);
+}
+
+.tree-item.active {
+  background: var(--bg-active);
+  color: var(--accent-blue);
+  font-weight: 500;
+}
+
+/* Chevron — SF Symbols style */
+.tree-chevron {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  transition: transform 0.2s ease;
+}
+.tree-chevron.expanded {
+  transform: rotate(90deg);
+}
+
+.tree-item.active .tree-chevron {
+  color: var(--accent-blue);
+}
+
+.tree-chevron-placeholder {
+  width: 12px;
+  flex-shrink: 0;
+}
+
+.tree-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-count {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  background: var(--border-light);
+  padding: 1px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.tree-item.active .tree-count {
+  background: rgba(0, 122, 255, 0.12);
+  color: var(--accent-blue);
+}
+
+/* --- Empty state --- */
+.category-tree-empty {
+  padding: var(--space-2xl) var(--space-lg);
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.empty-icon {
+  color: var(--text-tertiary);
+  opacity: 0.4;
+}

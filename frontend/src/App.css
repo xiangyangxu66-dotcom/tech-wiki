@@ -1,0 +1,202 @@
+/* ==========================================================================
+   App Layout — Mac-style sidebar + content
+   ========================================================================== */
+
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   Sidebar — frosted glass
+   ========================================================================== */
+.sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-sidebar);
+  backdrop-filter: var(--blur-sidebar);
+  -webkit-backdrop-filter: var(--blur-sidebar);
+  border-right: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sidebar);
+  overflow: hidden;
+  z-index: 10;
+}
+
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-top: var(--space-md);
+}
+
+.sidebar-footer {
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--border-light);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ==========================================================================
+   Main Content
+   ========================================================================== */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg-root);
+  display: flex;
+  flex-direction: column;
+}
+
+.main-header {
+  padding: var(--space-xl) var(--space-2xl) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg-root);
+  border-bottom: 1px solid var(--border-light);
+  backdrop-filter: saturate(160%) blur(10px);
+  -webkit-backdrop-filter: saturate(160%) blur(10px);
+}
+
+.main-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.window-chrome {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.dot-red {
+  background: #ff5f57;
+}
+
+.dot-yellow {
+  background: #ffbd2e;
+}
+
+.dot-green {
+  background: #28c840;
+}
+
+.main-header-top h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+
+.main-header h1 {
+  font-size: 30px;
+  font-weight: 760;
+  letter-spacing: -0.6px;
+}
+
+.main-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.main-shortcuts {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.main-body {
+  padding: 0 var(--space-2xl) var(--space-2xl);
+}
+
+.search-row {
+  margin-top: var(--space-md);
+}
+
+/* --- Active Filter (SQL style) --- */
+.active-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--space-md);
+  padding: 6px 12px;
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.filter-column {
+  color: var(--text-secondary);
+}
+
+.filter-op {
+  color: var(--text-tertiary);
+  margin: 0 1px;
+}
+
+.filter-value {
+  color: var(--accent-blue);
+  font-weight: 700;
+}
+
+.filter-clear {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  line-height: 1;
+}
+
+.filter-clear:hover {
+  color: var(--accent-red);
+  background: rgba(255, 59, 48, 0.08);
+}
+
+@media (max-width: 860px) {
+  .main-header {
+    padding: var(--space-lg);
+  }
+
+  .main-body {
+    padding: 0 var(--space-lg) var(--space-xl);
+  }
+}
+
+/* --- Footer (HealthIndicator) --- */
+.main-footer {
+  margin-top: var(--space-xl);
+  padding-top: var(--space-md);
+  border-top: 0.5px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

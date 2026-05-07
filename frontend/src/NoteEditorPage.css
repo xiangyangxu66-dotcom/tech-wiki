@@ -1,0 +1,213 @@
+.editor-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background:
+        radial-gradient(circle at top left, rgba(0, 122, 255, 0.08), transparent 28%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 245, 247, 0.96));
+}
+
+.editor-shell-state {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    color: var(--text-secondary);
+    font-size: 15px;
+}
+
+/* ── Top bar ── */
+.editor-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-light);
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.editor-topbar-left,
+.editor-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.editor-topbar-left {
+    flex-wrap: wrap;
+}
+
+/* ── Shared button base ── */
+.editor-nav-link,
+.editor-danger-btn,
+.editor-primary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid var(--border-light);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: opacity 0.15s, box-shadow 0.15s;
+}
+
+/* ── Nav link ── */
+.editor-nav-link {
+    background: #fff;
+    color: var(--text-primary);
+}
+.editor-nav-link:hover {
+    box-shadow: var(--shadow-xs);
+}
+
+/* ── Primary (Save) ── */
+.editor-primary-btn {
+    background: var(--accent-blue);
+    color: #fff;
+    border-color: transparent;
+}
+
+/* ── Danger (Delete) ── */
+.editor-danger-btn {
+    background: #fff;
+    color: var(--accent-red);
+    border-color: var(--accent-red);
+}
+
+.editor-primary-btn:disabled,
+.editor-danger-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Shortcut hint ── */
+.editor-shortcuts {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+/* ── Error banner ── */
+.editor-error-banner {
+    margin: 12px 18px 0;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    background: rgba(255, 59, 48, 0.08);
+    color: var(--accent-red);
+    border: 1px solid rgba(255, 59, 48, 0.14);
+}
+
+/* ── Split pane ── */
+.editor-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 18px;
+    padding: 18px;
+}
+
+.editor-pane {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.84);
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.editor-pane-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+/* ── Write pane ── */
+.editor-pane-write {
+    padding-bottom: 12px;
+}
+
+.editor-form-row {
+    padding: 14px 16px 0;
+}
+
+.editor-title-input,
+.editor-textarea {
+    width: 100%;
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    background: #fff;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+}
+
+.editor-title-input {
+    min-height: 54px;
+    padding: 14px 16px;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.editor-textarea {
+    flex: 1;
+    min-height: 420px;
+    margin: 14px 16px 0;
+    padding: 16px;
+    resize: none;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+/* ── Preview pane ── */
+.editor-preview-head {
+    padding: 18px 20px 0;
+}
+
+.editor-preview-head h1 {
+    font-size: 30px;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.editor-preview-body {
+    flex: 1;
+    overflow: auto;
+    padding: 12px 20px 20px;
+}
+
+/* ── Footer ── */
+.note-page-footer {
+    margin-top: var(--space-2xl);
+    padding-top: var(--space-md);
+    border-top: 0.5px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 980px) {
+    .editor-topbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .editor-grid {
+        grid-template-columns: 1fr;
+    }
+}

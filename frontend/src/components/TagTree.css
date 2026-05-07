@@ -1,0 +1,139 @@
+/* ==========================================================================
+   TagTree — tag-based dynamic group sidebar
+   ========================================================================== */
+
+.tag-tree-section {
+  padding: var(--space-sm) 0;
+}
+
+.tag-tree-item button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-sm) var(--space-lg);
+  font-size: 13px;
+  font-weight: 450;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  margin: 2px var(--space-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  font-family: inherit;
+}
+
+.tag-tree-item button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.tag-tree-item.active button {
+  background: var(--bg-active);
+  color: var(--accent-blue);
+  font-weight: 550;
+}
+
+.tag-tree-item.untagged {
+  border-top: 1px dashed var(--border-light);
+  margin-top: 6px;
+  padding-top: 8px;
+  opacity: 0.75;
+}
+
+.tag-tree-item.untagged button:hover {
+  opacity: 1;
+}
+
+.tag-tree-icon {
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-light);
+  color: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.9);
+  text-align: center;
+}
+
+.tag-tree-icon.tag-icon {
+  color: var(--accent-blue);
+  border-color: rgba(0, 122, 255, 0.26);
+  background: rgba(0, 122, 255, 0.08);
+}
+
+.tag-tree-icon.untagged-icon {
+  color: var(--text-tertiary);
+  border-style: dashed;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.tag-tree-icon.all {
+  color: var(--text-tertiary);
+  border-color: transparent;
+  background: transparent;
+  font-size: 10px;
+  opacity: 0.4;
+}
+
+.tag-tree-item.active .tag-tree-icon {
+  border-color: rgba(0, 122, 255, 0.34);
+  color: var(--accent-blue);
+}
+
+.tag-tree-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag-tree-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1px 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  min-width: 20px;
+  text-align: center;
+}
+
+.tag-tree-item.active .tag-tree-badge {
+  background: var(--accent-blue);
+  color: #fff;
+}
+
+.tag-tree-divider {
+  margin: var(--space-sm) var(--space-lg);
+  border-top: 1px solid var(--border-light);
+}
+
+.tag-tree-label-header {
+  padding: var(--space-xs) var(--space-lg);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tag-tree-loading,
+.tag-tree-error,
+.tag-tree-empty {
+  padding: var(--space-md) var(--space-lg);
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.tag-tree-error {
+  color: var(--accent-red);
+}
