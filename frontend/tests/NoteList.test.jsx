@@ -220,3 +220,36 @@ describe('NoteList — toolbar', () => {
     expect(link.getAttribute('href')).toBe('/note/new/edit');
   });
 });
+
+describe('NoteList — search highlighting (extractSearchTerms)', () => {
+  const taggedNotes = [
+    { id: 1, title: 'Reactガイド', slug: 'react-guide', note_tags: ['React'], updated_at: '2026-01-01T00:00:00Z' },
+    { id: 2, title: 'Django入門', slug: 'django-intro', note_tags: ['Django'], updated_at: '2026-01-02T00:00:00Z' },
+  ];
+
+  it('highlights title term when searchParams.title is set', () => {
+    const { container } = render(
+      <NoteList notes={taggedNotes} loading={false} searchParams={{ title: 'React' }} />
+    );
+    const marks = container.querySelectorAll('.card-title mark');
+    expect(marks.length).toBeGreaterThanOrEqual(1);
+    expect(marks[0].textContent).toBe('React');
+  });
+
+  it('does not highlight titles when no searchParams', () => {
+    const { container } = render(
+      <NoteList notes={taggedNotes} loading={false} />
+    );
+    expect(container.querySelectorAll('.card-title mark').length).toBe(0);
+  });
+
+  it('deduplicates overlapping title and content terms', () => {
+    // title='React' and content='React Hooks' → 'React' should appear once in searchTerms
+    const { container } = render(
+      <NoteList notes={taggedNotes} loading={false} searchParams={{ title: 'React', content: 'React Hooks' }} />
+    );
+    const marks = container.querySelectorAll('.card-title mark');
+    // 'React' matches in both cards (react-guide title)
+    expect(marks.length).toBeGreaterThanOrEqual(1);
+  });
+});

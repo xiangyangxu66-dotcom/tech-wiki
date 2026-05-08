@@ -35,10 +35,43 @@ function StarIcon({ filled, onClick }) {
     );
 }
 
+/**
+ * Wrap matching substrings in <mark> elements.
+ *
+ * Strategy:
+ *  - Build a single regex: (term1|term2|...)
+ *  - String.split(regex) yields alternating [non-match, match, non-match, …]
+ *  - Odd-indexed parts (matches) → <mark>, even-indexed → plain text
+ *
+ * Regex metacharacters in search terms are escaped so the user types
+ * literal words even though the backend may use REGEXP for content.
+ */
+function HighlightTitle({ text, terms }) {
+    if (!terms || terms.length === 0) return text;
+    if (!text) return null;
+
+    const escaped = terms.map(t =>
+        t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    );
+    const regex = new RegExp(`(${escaped.join('|')})`, 'gi');
+    const parts = text.split(regex);
+
+    // No match found — return plain text
+    if (parts.length === 1) return text;
+
+    return parts.map((part, i) =>
+        // Odd indices are capture group hits
+        i % 2 === 1
+            ? <mark key={i}>{part}</mark>
+            : part
+    );
+}
+
 export default function NoteCard({
     note,
     onBookmarkToggle,
     mode = 'list',
+    searchTerms,
 }) {
     const tags = note.note_tags || [];
     const icon = pickIcon(note.title, tags);
@@ -59,7 +92,9 @@ export default function NoteCard({
         return (
             <a href={editorHref} className={`card-icon ${note.bookmark ? 'bookmarked' : ''}`}>
                 <div className="card-icon-symbol">{icon}</div>
-                <div className="card-icon-title" title={note.title}>{note.title}</div>
+                <div className="card-icon-title" title={note.title}>
+                    <HighlightTitle text={note.title} terms={searchTerms} />
+                </div>
                 <StarIcon filled={note.bookmark} onClick={handleBookmarkClick} />
             </a>
         );
@@ -75,7 +110,9 @@ export default function NoteCard({
                 <div className="card-header">
                     <StarIcon filled={note.bookmark} onClick={handleBookmarkClick} />
                     <h3 className="card-title">
-                        <a href={editorHref}>{note.title}</a>
+                        <a href={editorHref}>
+                            <HighlightTitle text={note.title} terms={searchTerms} />
+                        </a>
                     </h3>
                 </div>
                 <div className="card-meta-row">

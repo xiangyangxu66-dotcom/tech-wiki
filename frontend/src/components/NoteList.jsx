@@ -11,7 +11,29 @@ const SORT_OPTIONS = [
     { key: 'title', label: 'ファイル名', fn: (a, b) => a.title.localeCompare(b.title, 'ja') },
 ];
 
-export default function NoteList({ notes, loading, activeTag, onTagClick, onNotesChange }) {
+function extractSearchTerms(searchParams) {
+    const terms = [];
+    if (searchParams?.title) {
+        const words = searchParams.title.trim().split(/\s+/);
+        for (const w of words) if (w) terms.push(w);
+    }
+    if (searchParams?.content) {
+        // Content uses REGEXP on backend; treat space-separated words as literal terms
+        const words = searchParams.content.trim().split(/\s+/);
+        for (const w of words) if (w) terms.push(w);
+    }
+    // Deduplicate (case-insensitive) — keep first occurrence
+    const seen = new Set();
+    return terms.filter(t => {
+        const lower = t.toLowerCase();
+        if (seen.has(lower)) return false;
+        seen.add(lower);
+        return true;
+    });
+}
+
+export default function NoteList({ notes, loading, activeTag, onTagClick, onNotesChange, searchParams }) {
+    const searchTerms = extractSearchTerms(searchParams);
     const [viewMode, setViewMode] = useState('list');
     const [listColumns, setListColumns] = useState(3);
     const [sortKey, setSortKey] = useState('updated');
@@ -155,6 +177,7 @@ export default function NoteList({ notes, loading, activeTag, onTagClick, onNote
                                 note={note}
                                 onBookmarkToggle={handleBookmarkToggle}
                                 mode={viewMode}
+                                searchTerms={searchTerms}
                             />
                         ))}
                     </div>
@@ -184,6 +207,7 @@ export default function NoteList({ notes, loading, activeTag, onTagClick, onNote
                                     note={note}
                                     onBookmarkToggle={handleBookmarkToggle}
                                     mode={viewMode}
+                                    searchTerms={searchTerms}
                                 />
                             ))}
                         </div>

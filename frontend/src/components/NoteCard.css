@@ -199,7 +199,9 @@
   -webkit-box-orient: vertical;
 }
 
-.card-snippet mark {
+.card-snippet mark,
+.card-title mark,
+.card-icon-title mark {
   background: rgba(255, 204, 0, 0.25);
   color: var(--text-primary);
   font-weight: 500;

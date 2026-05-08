@@ -148,3 +148,72 @@ describe('NoteCard — link targets', () => {
     expect(link.getAttribute('href')).toBe('/note/react-guide/edit');
   });
 });
+
+describe('NoteCard — search term highlighting', () => {
+  it('highlights title when searchTerms match', () => {
+    const { container } = render(
+      <NoteCard note={baseNote} searchTerms={['React']} />
+    );
+    const marks = container.querySelectorAll('.card-title mark');
+    expect(marks.length).toBe(1);
+    expect(marks[0].textContent).toBe('React');
+  });
+
+  it('highlights multiple match occurrences', () => {
+    const note = { ...baseNote, title: 'ReactとReactNative' };
+    const { container } = render(
+      <NoteCard note={note} searchTerms={['React']} />
+    );
+    const marks = container.querySelectorAll('.card-title mark');
+    expect(marks.length).toBe(2);
+  });
+
+  it('highlights in icon mode title', () => {
+    const { container } = render(
+      <NoteCard note={baseNote} mode="icon" searchTerms={['React']} />
+    );
+    const marks = container.querySelectorAll('.card-icon-title mark');
+    expect(marks.length).toBe(1);
+  });
+
+  it('does not highlight when searchTerms is empty', () => {
+    const { container } = render(
+      <NoteCard note={baseNote} searchTerms={[]} />
+    );
+    expect(container.querySelector('.card-title mark')).toBeNull();
+  });
+
+  it('does not highlight when searchTerms is undefined', () => {
+    const { container } = render(<NoteCard note={baseNote} />);
+    expect(container.querySelector('.card-title mark')).toBeNull();
+  });
+
+  it('escapes regex special characters in search terms', () => {
+    const note = { ...baseNote, title: 'C++ガイド' };
+    const { container } = render(
+      <NoteCard note={note} searchTerms={['C++']} />
+    );
+    const marks = container.querySelectorAll('.card-title mark');
+    expect(marks.length).toBe(1);
+    expect(marks[0].textContent).toBe('C++');
+  });
+
+  it('highlights with case-insensitive matching', () => {
+    const note = { ...baseNote, title: 'REACTガイド' };
+    const { container } = render(
+      <NoteCard note={note} searchTerms={['react']} />
+    );
+    const marks = container.querySelectorAll('.card-title mark');
+    expect(marks.length).toBe(1);
+    expect(marks[0].textContent).toBe('REACT');
+  });
+
+  it('highlights multiple distinct terms', () => {
+    const note = { ...baseNote, title: 'ReactとJavaScriptガイド' };
+    const { container } = render(
+      <NoteCard note={note} searchTerms={['React', 'JavaScript']} />
+    );
+    const marks = container.querySelectorAll('.card-title mark');
+    expect(marks.length).toBe(2);
+  });
+});

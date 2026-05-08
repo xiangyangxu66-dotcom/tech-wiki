@@ -101,6 +101,7 @@ export default function App() {
             activeTag={activeTag}
             onTagClick={tag => setActiveTag(tag === activeTag ? null : tag)}
             onNotesChange={setNotes}
+            searchParams={searchParams}
           />
           <footer className="main-footer" />
         </div>
