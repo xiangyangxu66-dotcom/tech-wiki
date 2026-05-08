@@ -7,6 +7,9 @@ cd "$(dirname "$0")/.."
 echo "=== Backend (Django + pytest) ==="
 cd backend
 .venv/bin/pytest --cov=wiki --cov-report=html:../docs/coverage/backend
+# coverage.py auto-generates a .gitignore that ignores everything.
+# We use docs/coverage/ as a permanent artifact, so remove it.
+rm -f ../docs/coverage/backend/.gitignore
 cd ..
 
 echo ""
