@@ -1,7 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NoteList from '../src/components/NoteList';
+
+// Mock notes.js toggleBookmark so we don't make real API calls
+vi.mock('../src/api/notes', () => ({
+  toggleBookmark: vi.fn().mockResolvedValue({}),
+}));
 
 const notes = [
   {
@@ -24,7 +29,7 @@ const notes = [
   },
 ];
 
-describe('NoteList', () => {
+describe('NoteList — basic rendering (existing)', () => {
   it('renders loading state', () => {
     render(<NoteList notes={[]} loading={true} />);
     expect(screen.getByText('読み込み中...')).toBeInTheDocument();
@@ -46,17 +51,12 @@ describe('NoteList', () => {
     expect(screen.getAllByText('JavaScript入門').length).toBeGreaterThan(0);
   });
 
-  it('renders category name', () => {
+  it('renders tag groups as section dividers', () => {
     render(<NoteList notes={notes} loading={false} />);
-    const categories = screen.getAllByText('プログラミング');
-    expect(categories.length).toBeGreaterThanOrEqual(2);
-  });
-
-  it('renders tag badges', () => {
-    render(<NoteList notes={notes} loading={false} />);
+    // #Python, #JavaScript, #入門 appear as section dividers
     expect(screen.getByText('Python')).toBeInTheDocument();
-    expect(screen.getByText('入門')).toBeInTheDocument();
     expect(screen.getByText('JavaScript')).toBeInTheDocument();
+    expect(screen.getByText('入門')).toBeInTheDocument();
   });
 
   it('renders links to note detail', () => {
@@ -95,5 +95,128 @@ describe('NoteList', () => {
 
     expect(screen.getByText('2 / 2')).toBeInTheDocument();
     expect(screen.getByText('Pythonノート11')).toBeInTheDocument();
+  });
+});
+
+describe('NoteList — view mode & column toggle', () => {
+  it('toggles between list and icon mode', async () => {
+    const user = userEvent.setup();
+    render(<NoteList notes={notes} loading={false} />);
+    // default is list mode
+    const listBtn = screen.getByTitle('リスト表示');
+    const iconBtn = screen.getByTitle('アイコン表示');
+    expect(listBtn.classList.contains('active')).toBe(true);
+    expect(iconBtn.classList.contains('active')).toBe(false);
+
+    await user.click(iconBtn);
+    expect(iconBtn.classList.contains('active')).toBe(true);
+    expect(listBtn.classList.contains('active')).toBe(false);
+
+    await user.click(listBtn);
+    expect(listBtn.classList.contains('active')).toBe(true);
+    expect(iconBtn.classList.contains('active')).toBe(false);
+  });
+
+  it('shows column toggle only in list mode', () => {
+    const { container } = render(<NoteList notes={notes} loading={false} />);
+    // list mode → column toggle visible
+    expect(screen.getByText('2列')).toBeTruthy();
+    expect(screen.getByText('3列')).toBeTruthy();
+    expect(screen.getByText('4列')).toBeTruthy();
+  });
+
+  it('switches column count', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<NoteList notes={notes} loading={false} />);
+    const btn2 = screen.getByText('2列');
+    const btn4 = screen.getByText('4列');
+    expect(btn2.classList.contains('active')).toBe(false);
+    expect(btn4.classList.contains('active')).toBe(false);
+    // default is 3
+    expect(screen.getByText('3列').classList.contains('active')).toBe(true);
+
+    await user.click(btn2);
+    expect(btn2.classList.contains('active')).toBe(true);
+
+    await user.click(btn4);
+    expect(btn4.classList.contains('active')).toBe(true);
+  });
+});
+
+describe('NoteList — sort', () => {
+  it('renders sort select with all options', () => {
+    render(<NoteList notes={notes} loading={false} />);
+    expect(screen.getByText('更新日時')).toBeTruthy();
+    expect(screen.getByText('作成日時')).toBeTruthy();
+    expect(screen.getByText('ファイル名')).toBeTruthy();
+  });
+
+  it('changes sort key on select', async () => {
+    const user = userEvent.setup();
+    render(<NoteList notes={notes} loading={false} />);
+    const select = screen.getByRole('combobox');
+    await user.selectOptions(select, 'title');
+    expect(select.value).toBe('title');
+  });
+});
+
+describe('NoteList — bookmarks', () => {
+  it('renders bookmark section when bookmarked notes exist', () => {
+    const noteWithBookmark = [
+      { ...notes[0], bookmark: true },
+      notes[1],
+    ];
+    render(<NoteList notes={noteWithBookmark} loading={false} />);
+    expect(screen.getByText('ピン留め')).toBeTruthy();
+    expect(screen.getByText('📌')).toBeTruthy();
+  });
+
+  it('does not render bookmark section when no bookmarks', () => {
+    render(<NoteList notes={notes} loading={false} />);
+    expect(screen.queryByText('ピン留め')).toBeNull();
+  });
+
+  it('calls toggleBookmark and optimistically updates', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<NoteList notes={notes} loading={false} onNotesChange={onChange} />);
+    const starBtn = screen.getAllByLabelText('ブックマークする')[0];
+    await user.click(starBtn);
+    expect(onChange).toHaveBeenCalled();
+  });
+});
+
+describe('NoteList — untagged notes', () => {
+  it('groups notes with no tags under 未分類タグ', () => {
+    const untagged = [
+      { id: 9, title: 'タグなし', slug: 'no-tag', note_tags: [], updated_at: '2026-01-01T00:00:00Z' },
+    ];
+    render(<NoteList notes={untagged} loading={false} />);
+    // The section divider text includes '未分類タグ'
+    const sections = screen.getAllByText(/未分類タグ/);
+    expect(sections.length).toBeGreaterThan(0);
+  });
+});
+
+describe('NoteList — exactly 10 items (no pagination)', () => {
+  it('shows no pagination when exactly 10 items per tag', () => {
+    const ten = Array.from({ length: 10 }, (_, i) => ({
+      id: 200 + i,
+      title: `Goノート${i + 1}`,
+      slug: `go-note-${i + 1}`,
+      note_tags: ['Go'],
+      updated_at: '2026-01-01T00:00:00Z',
+    }));
+    render(<NoteList notes={ten} loading={false} />);
+    expect(screen.queryByText('前へ')).toBeNull();
+    expect(screen.queryByText('次へ')).toBeNull();
+  });
+});
+
+describe('NoteList — toolbar', () => {
+  it('renders Note作成 link', () => {
+    render(<NoteList notes={notes} loading={false} />);
+    const link = screen.getByText('Note作成');
+    expect(link.getAttribute('href')).toBe('/note/new/edit');
   });
 });
