@@ -53,18 +53,16 @@ export default function TagTree({ activeTag, onTagSelect }) {
       {/* タグ一覧ヘッダー + ソート選択 */}
       <div className="tag-tree-header-row">
         <div className="tag-tree-label-header">タグ</div>
-        <div className="tag-tree-sort">
+        <select
+          className="sort-select tag-sort-select"
+          value={sort}
+          onChange={(event) => handleSortChange(event.target.value)}
+          aria-label="タグの並び順"
+        >
           {SORT_MODES.map(m => (
-            <button
-              key={m.value}
-              className={`tag-sort-btn ${sort === m.value ? 'active' : ''}`}
-              onClick={() => handleSortChange(m.value)}
-              title={m.label}
-            >
-              {m.label}
-            </button>
+            <option key={m.value} value={m.value}>{m.label}</option>
           ))}
-        </div>
+        </select>
       </div>
 
       {loading && <div className="tag-tree-loading">読み込み中...</div>}

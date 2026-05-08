@@ -127,43 +127,13 @@
 }
 
 /* --------------------------------------------------------------------------
-   Sort selector
+   Sort selector — reuses .sort-select from NoteList.css
    -------------------------------------------------------------------------- */
 .tag-tree-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--space-sm) 0 0;
-}
-
-.tag-tree-sort {
-  display: flex;
-  gap: 2px;
-}
-
-.tag-sort-btn {
-  font-size: 10px;
-  font-weight: 500;
-  padding: 2px 7px;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
-  background: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  transition: all 0.15s;
-  font-family: inherit;
-  line-height: 1.5;
-}
-
-.tag-sort-btn:hover {
-  color: var(--text-secondary);
-  border-color: var(--text-tertiary);
-}
-
-.tag-sort-btn.active {
-  background: var(--bg-active);
-  color: var(--accent-blue);
-  border-color: rgba(0, 122, 255, 0.3);
 }
 
 .tag-tree-loading,

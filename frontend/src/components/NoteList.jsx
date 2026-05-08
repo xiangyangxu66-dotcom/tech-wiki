@@ -3,7 +3,9 @@ import { toggleBookmark } from '../api/notes';
 import NoteCard from './NoteCard';
 import './NoteList.css';
 
-const NOTES_PER_TAG_PAGE = 10;
+const ITEMS_PER_PAGE_LIST = 10;
+
+const ICON_ROWS_MAP = { 2: 5, 3: 3, 4: 3 };
 
 const SORT_OPTIONS = [
     { key: 'updated', label: '更新日時', fn: (a, b) => new Date(b.updated_at) - new Date(a.updated_at) },
@@ -38,6 +40,11 @@ export default function NoteList({ notes, loading, activeTag, onTagClick, onNote
     const [listColumns, setListColumns] = useState(3);
     const [sortKey, setSortKey] = useState('updated');
     const [tagPages, setTagPages] = useState({});
+
+    const notesPerPage = viewMode === 'icon'
+        ? listColumns * ICON_ROWS_MAP[listColumns]
+        : ITEMS_PER_PAGE_LIST;
+
     const safeNotes = notes || [];
 
     const sortFn = SORT_OPTIONS.find(option => option.key === sortKey)?.fn || SORT_OPTIONS[0].fn;
@@ -185,10 +192,10 @@ export default function NoteList({ notes, loading, activeTag, onTagClick, onNote
             )}
 
             {tagGroups.map(([tagName, tagNotes]) => {
-                const totalPages = Math.max(1, Math.ceil(tagNotes.length / NOTES_PER_TAG_PAGE));
+                const totalPages = Math.max(1, Math.ceil(tagNotes.length / notesPerPage));
                 const currentPage = Math.min(tagPages[tagName] || 1, totalPages);
-                const start = (currentPage - 1) * NOTES_PER_TAG_PAGE;
-                const pageItems = tagNotes.slice(start, start + NOTES_PER_TAG_PAGE);
+                const start = (currentPage - 1) * notesPerPage;
+                const pageItems = tagNotes.slice(start, start + notesPerPage);
 
                 return (
                     <section className="note-list-section" key={tagName}>

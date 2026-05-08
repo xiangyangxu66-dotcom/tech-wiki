@@ -180,8 +180,11 @@
 
 .section-icon.pin {
   color: var(--accent-red);
-  border-color: rgba(255, 59, 48, 0.32);
-  background: rgba(255, 59, 48, 0.1);
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  width: auto;
+  height: auto;
 }
 
 .section-icon.tag {
