@@ -8,4 +8,8 @@ dist/
 *.egg-info/
 .venv/
 venv/
-backend/dropzone/
+dropzone/
+logs/
+*.log
+.coverage
+htmlcov/

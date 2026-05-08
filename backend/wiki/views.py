@@ -54,20 +54,30 @@ def health_detailed(request):
 # ---------------------------------------------------------------------------
 # タグ集計（SQL GROUP BY）
 # ---------------------------------------------------------------------------
+from django.db.models import Max
+
+
 @api_view(['GET'])
 def tag_aggregation(request):
     """Tag テーブルから COUNT 集計。無所属カウントも返す。
 
-    クエリパラメータ ?min_count=N で最小カウントフィルタ（デフォルト1）。
+    クエリパラメータ:
+      ?min_count=N  最小カウントフィルタ（デフォルト1）
+      ?sort=mode    ソート順: updated (デフォルト) / alpha / count
     """
     min_count = int(request.query_params.get('min_count', 1))
-    result = list(
-        Tag.objects
-        .annotate(note_count=Count('notes'))
-        .filter(note_count__gte=min_count)
-        .values('name', 'slug', 'note_count')
-        .order_by('-note_count', 'name')
-    )
+    sort = request.query_params.get('sort', 'updated')
+
+    qs = Tag.objects.annotate(note_count=Count('notes')).filter(note_count__gte=min_count)
+
+    if sort == 'alpha':
+        qs = qs.order_by('name')
+    elif sort == 'count':
+        qs = qs.order_by('-note_count', 'name')
+    else:  # 'updated' (default)
+        qs = qs.annotate(last_note_updated=Max('notes__updated_at')).order_by('-last_note_updated', 'name')
+
+    result = list(qs.values('name', 'slug', 'note_count'))
     # rename note_count → count for frontend compatibility
     result = [{'name': r['name'], 'slug': r['slug'], 'count': r['note_count']} for r in result]
 

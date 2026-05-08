@@ -2,7 +2,7 @@ import { api } from './client';
 
 export const fetchNotes = (params) => api.get('/notes/', params);
 export const fetchNote = (slug) => api.get(`/notes/${slug}/`);
-export const fetchTags = () => api.get('/tags/');
+export const fetchTags = (params) => api.get('/tags/', params);
 export const createNote = (payload) => api.post('/notes/', payload);
 export const updateNote = (slug, payload) => api.patch(`/notes/${slug}/`, payload);
 export const deleteNote = (slug) => api.delete(`/notes/${slug}/`);

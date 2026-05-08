@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { fetchTags } from '../api/notes';
 import './TagTree.css';
 
@@ -6,17 +6,37 @@ import './TagTree.css';
  * TagTree — タグ動的グループによるサイドバーナビ
  * tags: [{name: string, count: number}, ...]
  */
+const SORT_MODES = [
+  { value: 'updated', label: '更新順' },
+  { value: 'alpha', label: 'ABC' },
+  { value: 'count', label: '件数順' },
+];
+
 export default function TagTree({ activeTag, onTagSelect }) {
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sort, setSort] = useState(() => {
+    try { return localStorage.getItem('techwiki:tagSort') || 'updated'; }
+    catch { return 'updated'; }
+  });
 
-  useEffect(() => {
-    fetchTags()
+  const loadTags = useCallback((sortMode) => {
+    setLoading(true);
+    fetchTags({ sort: sortMode })
       .then(data => { setTags(data); setError(null); })
       .catch(e => { console.error('TagTree fetch error', e); setError(e.message); })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadTags(sort);
+  }, [sort, loadTags]);
+
+  const handleSortChange = (mode) => {
+    setSort(mode);
+    try { localStorage.setItem('techwiki:tagSort', mode); } catch {}
+  };
 
   return (
     <div className="tag-tree-section">
@@ -30,8 +50,22 @@ export default function TagTree({ activeTag, onTagSelect }) {
 
       <div className="tag-tree-divider" />
 
-      {/* タグ一覧 */}
-      <div className="tag-tree-label-header">タグ</div>
+      {/* タグ一覧ヘッダー + ソート選択 */}
+      <div className="tag-tree-header-row">
+        <div className="tag-tree-label-header">タグ</div>
+        <div className="tag-tree-sort">
+          {SORT_MODES.map(m => (
+            <button
+              key={m.value}
+              className={`tag-sort-btn ${sort === m.value ? 'active' : ''}`}
+              onClick={() => handleSortChange(m.value)}
+              title={m.label}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {loading && <div className="tag-tree-loading">読み込み中...</div>}
       {error && <div className="tag-tree-error">タグ取得失敗</div>}
